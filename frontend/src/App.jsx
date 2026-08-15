@@ -10,6 +10,8 @@ import Profile from "./pages/Profile";
 import { AuthProvider } from "./context/AuthProvider";
 import { PrivateRoute } from "./context/PrivateRoute";
 import Cart from "./components/Cart";
+import Checkout from "./pages/Checkout";
+
 
 
 function App() {
@@ -29,11 +31,22 @@ function App() {
             <Profile />
             </PrivateRoute>
           } />
-            <Route path="/cart" element={
-            <PrivateRoute>
-            <Cart />
-            </PrivateRoute>
-          } />
+          <Route
+            path="/cart"
+            element={
+              <PrivateRoute>
+                <Cart />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <PrivateRoute>
+                <Checkout />
+              </PrivateRoute>
+            }
+          />
         </Routes>
         </AuthProvider>
       </Router>
