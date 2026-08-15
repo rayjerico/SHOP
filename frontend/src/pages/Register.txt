@@ -1,0 +1,75 @@
+function Register() {
+  return (
+    <main className="flex min-h-[calc(100vh-5rem)] items-start justify-center px-6 pt-16 sm:pt-20">
+      <section
+        aria-labelledby="register-heading"
+        className="w-full max-w-[394px] rounded-b-lg border-x border-b border-gray-200 bg-white px-5 pb-6 pt-5 shadow-md sm:px-5"
+      >
+        <h2
+          id="register-heading"
+          className="mb-4 text-[32px] font-bold leading-tight text-[#14295d]"
+        >
+          Sign Up
+        </h2>
+
+        <form className="space-y-3.5">
+          <label className="block text-[13px] font-semibold text-black">
+            Username
+            <input
+              type="text"
+              name="username"
+              autoComplete="username"
+              className="mt-3 block h-8 w-full rounded-lg border border-black bg-white px-3 text-sm outline-none focus:border-[#14295d] focus:ring-1 focus:ring-[#14295d]"
+            />
+          </label>
+
+          <label className="block text-[13px] font-semibold text-black">
+            Email
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              className="mt-3 block h-8 w-full rounded-lg border border-black bg-white px-3 text-sm outline-none focus:border-[#14295d] focus:ring-1 focus:ring-[#14295d]"
+            />
+          </label>
+
+          <label className="block text-[13px] font-semibold text-black">
+            Password
+            <input
+              type="password"
+              name="password"
+              autoComplete="new-password"
+              className="mt-3 block h-8 w-full rounded-lg border border-black bg-white px-3 text-sm outline-none focus:border-[#14295d] focus:ring-1 focus:ring-[#14295d]"
+            />
+          </label>
+
+          <label className="block text-[13px] font-semibold text-black">
+            Confirm Password
+            <input
+              type="password"
+              name="confirmPassword"
+              autoComplete="new-password"
+              className="mt-3 block h-8 w-full rounded-lg border border-black bg-white px-3 text-sm outline-none focus:border-[#14295d] focus:ring-1 focus:ring-[#14295d]"
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="h-8 w-full rounded-lg bg-[#14295d] text-xs font-semibold text-white transition hover:bg-[#10224e] focus:outline-none focus:ring-2 focus:ring-[#14295d] focus:ring-offset-2"
+          >
+            Register
+          </button>
+        </form>
+
+        <a
+          href="/Login"
+          className="mt-4 inline-block text-xs font-semibold text-[#14295d] hover:underline"
+        >
+          I already had an account.
+        </a>
+      </section>
+    </main>
+  );
+}
+
+export default Register;

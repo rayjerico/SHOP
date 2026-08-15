@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* One card width + gap */
+.partner-item {
+  width: 298px;
+  flex-shrink: 0;
+  margin-right: 48px;
+}
+
+.partner-track {
+  display: flex;
+  width: max-content;
+  animation: partner-scroll 25s linear infinite;
+  will-change: transform;
+}
+
+.partner-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes partner-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc((-298px - 48px) * 6));
+  }
+}

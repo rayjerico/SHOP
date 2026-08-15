@@ -1,0 +1,78 @@
+import { Link } from "react-router-dom";
+//import React, {useContext} from "react";
+import { FaShoppingCart, FaUser } from "react-icons/fa";
+//import { AuthContext } from "../context/AuthProvider";
+
+
+const Header = () => {
+  return (
+    <header className="w-full bg-white">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
+        {/* Logo */}
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-black">
+            RIVANSH
+          </h1>
+        </div>
+
+        {/* Navigation */}
+        <nav className="ml-auto mr-12 hidden items-center gap-10 md:flex">
+          <a
+            href="/"
+            className="text-[15px] font-medium text-gray-800 transition hover:text-blue-900"
+          >
+            Home
+          </a>
+
+          <a
+            href="/products"
+            className="text-[15px] font-medium text-gray-800 transition hover:text-blue-900"
+          >
+            Products
+          </a>
+
+          <a
+            href="#"
+            className="text-[15px] font-medium text-gray-800 transition hover:text-blue-900"
+          >
+            Team
+          </a>
+        </nav>
+
+        {/* Buttons */}
+        <div className="hidden items-center gap-4 md:flex">
+        <Link to="/cart">
+        <FaShoppingCart />
+        </Link>
+        <Link to="/profile">
+        <FaUser />
+        </Link>
+
+
+          <a
+            href="/register"
+            className="rounded-xl border border-[#1B2C64] px-7 py-2.5 font-medium text-[#1B2C64] transition hover:bg-[#1B2C64] hover:text-white"
+          >
+            Register
+          </a>
+
+          <a
+            href="/login"
+            className="rounded-xl bg-[#1B2C64] px-7 py-2.5 font-medium text-white transition hover:bg-[#162552]"
+          >
+            Sign In
+          </a>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <button className="flex flex-col gap-1 md:hidden">
+          <span className="h-0.5 w-6 bg-black"></span>
+          <span className="h-0.5 w-6 bg-black"></span>
+          <span className="h-0.5 w-6 bg-black"></span>
+        </button>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
