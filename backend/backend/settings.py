@@ -31,6 +31,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     "https://shop-rj-8f25.vercel.app/",
+    "https://shop-9zmv.onrender.com/",
 ]
 
 #render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -78,6 +79,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://shop-rj-8f25.vercel.app/",
+    "https://shop-9zmv.onrender.com/",
 ]
 
 ROOT_URLCONF = 'backend.urls'
