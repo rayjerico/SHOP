@@ -7,12 +7,8 @@ const Checkout = () => {
   const navigate = useNavigate();
 
   const [cartItems, setCartItems] = useState([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
-
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
-
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
@@ -49,40 +45,30 @@ const Checkout = () => {
           }
         );
 
-        console.log(
-          "Checkout cart response:",
-          response.data
-        );
-
-        // Your Django cart_view returns:
-        // {
-        //   items: [],
-        //   total_items: 0,
-        //   total_price: 0
-        // }
-
-        const items = response.data?.items ?? [];
+        /*
+         * Supports both:
+         *
+         * response.data = [...]
+         *
+         * and:
+         *
+         * response.data = {
+         *   cart: [...]
+         * }
+         */
+        const items = Array.isArray(response.data)
+          ? response.data
+          : response.data.cart || [];
 
         setCartItems(items);
-        setTotalItems(
-          Number(response.data?.total_items ?? 0)
-        );
-        setTotalPrice(
-          Number(response.data?.total_price ?? 0)
-        );
 
         if (items.length === 0) {
           setError("Your cart is empty.");
         }
       } catch (err) {
         console.error(
-          "Failed to load checkout cart:",
+          "Failed to load cart:",
           err
-        );
-
-        console.error(
-          "Server response:",
-          err.response?.data
         );
 
         if (err.response?.status === 401) {
@@ -106,7 +92,7 @@ const Checkout = () => {
   }, [navigate]);
 
   // =========================================
-  // Handle Form Changes
+  // Handle input changes
   // =========================================
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -118,62 +104,59 @@ const Checkout = () => {
   };
 
   // =========================================
-  // Product Helper
+  // Get product
   // =========================================
   const getProduct = (item) => {
-    return item.product || {};
+    return item.product || item;
   };
 
   // =========================================
-  // Quantity Helper
+  // Get quantity
   // =========================================
   const getQuantity = (item) => {
-    return Number(item.qty ?? 0);
+    return Number(
+      item.qty ||
+        item.quantity ||
+        0
+    );
   };
 
   // =========================================
-  // Price Helper
+  // Get price
   // =========================================
   const getPrice = (item) => {
     const product = getProduct(item);
 
     return Number(
-      product.product_price ?? 0
+      product.product_price ||
+        product.price ||
+        item.product_price ||
+        0
     );
   };
 
   // =========================================
-  // Product Image Helper
+  // Calculate subtotal
   // =========================================
-  const getProductImage = (image) => {
-    if (!image) {
-      return "";
-    }
+  const subtotal = cartItems.reduce(
+    (total, item) => {
+      const price = getPrice(item);
+      const quantity = getQuantity(item);
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
-      return image;
-    }
-
-    return `${BASE_URL}${image}`;
-  };
+      return total + price * quantity;
+    },
+    0
+  );
 
   // =========================================
   // Shipping
   // =========================================
   const shippingFee = 0;
 
-  // Django calculates the actual payment total.
-  // This value is only for frontend display.
-  const subtotal = Number(totalPrice);
-
-  const total =
-    subtotal + shippingFee;
+  const total = subtotal + shippingFee;
 
   // =========================================
-  // Proceed to Xendit Payment
+  // Create Xendit Payment
   // =========================================
   const handleCheckout = async (event) => {
     event.preventDefault();
@@ -181,17 +164,19 @@ const Checkout = () => {
     const accessToken =
       localStorage.getItem("access_token");
 
+    // Make sure user is logged in
     if (!accessToken) {
       navigate("/login");
       return;
     }
 
+    // Make sure cart isn't empty
     if (cartItems.length === 0) {
       setError("Your cart is empty.");
       return;
     }
 
-    // Validate shipping form
+    // Validate shipping information
     if (
       !form.fullName.trim() ||
       !form.address.trim() ||
@@ -209,7 +194,18 @@ const Checkout = () => {
       setCheckingOut(true);
       setError("");
 
-      // Django expects exactly these fields
+      /*
+       * Send the shipping information to Django.
+       *
+       * Django will:
+       *
+       * 1. Get the authenticated user
+       * 2. Get the user's cart
+       * 3. Calculate the total
+       * 4. Create paymentMethod
+       * 5. Create the Xendit invoice
+       * 6. Return the Xendit invoice URL
+       */
       const response = await axios.post(
         `${BASE_URL}/api/checkout/xendit`,
         {
@@ -232,31 +228,39 @@ const Checkout = () => {
         response.data
       );
 
-      // Your Django backend returns:
-      // {
-      //   checkout_url: "https://checkout.xendit.co/..."
-      // }
+      /*
+       * Your Django backend should return
+       * the Xendit invoice URL.
+       *
+       * We support several possible names
+       * here to make the frontend flexible.
+       */
+      const invoiceUrl =
+        response.data.invoice_url ||
+        response.data.invoiceUrl ||
+        response.data.payment_url ||
+        response.data.paymentUrl;
 
-      const checkoutUrl =
-        response.data?.checkout_url;
-
-      if (!checkoutUrl) {
-        console.error(
-          "No checkout_url returned:",
-          response.data
-        );
-
-        setError(
-          "Xendit payment was created, but no checkout URL was returned."
-        );
-
+      // =========================================
+      // Redirect to Xendit
+      // =========================================
+      if (invoiceUrl) {
+        window.location.href = invoiceUrl;
         return;
       }
 
-      // =========================================
-      // Redirect directly to Xendit
-      // =========================================
-      window.location.href = checkoutUrl;
+      /*
+       * If Django successfully responded but
+       * didn't provide a payment URL.
+       */
+      console.error(
+        "Xendit URL was not returned:",
+        response.data
+      );
+
+      setError(
+        "Payment was created, but the Xendit payment URL was not returned."
+      );
     } catch (err) {
       console.error(
         "Xendit checkout failed:",
@@ -268,7 +272,9 @@ const Checkout = () => {
         err.response?.data
       );
 
-      // Session expired
+      // =========================================
+      // Unauthorized
+      // =========================================
       if (err.response?.status === 401) {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
@@ -277,7 +283,9 @@ const Checkout = () => {
         return;
       }
 
+      // =========================================
       // Django detail error
+      // =========================================
       if (err.response?.data?.detail) {
         setError(
           err.response.data.detail
@@ -285,18 +293,28 @@ const Checkout = () => {
         return;
       }
 
-      // Serializer validation errors
+      // =========================================
+      // Django error
+      // =========================================
+      if (err.response?.data?.error) {
+        setError(
+          err.response.data.error
+        );
+        return;
+      }
+
+      // =========================================
+      // Validation errors
+      // =========================================
       if (
         err.response?.data &&
         typeof err.response.data === "object"
       ) {
-        const validationErrors =
-          Object.values(
-            err.response.data
-          ).flat();
+        const data = err.response.data;
 
-        const firstError =
-          validationErrors.find(
+        const firstError = Object.values(data)
+          .flat()
+          .find(
             (message) =>
               typeof message === "string"
           );
@@ -307,7 +325,9 @@ const Checkout = () => {
         }
       }
 
-      // Django didn't respond
+      // =========================================
+      // Server connection error
+      // =========================================
       if (!err.response) {
         setError(
           "Unable to connect to the Django server."
@@ -324,7 +344,7 @@ const Checkout = () => {
   };
 
   // =========================================
-  // Loading State
+  // Loading
   // =========================================
   if (loading) {
     return (
@@ -337,11 +357,12 @@ const Checkout = () => {
   }
 
   // =========================================
-  // Empty Cart State
+  // Empty cart
   // =========================================
   if (cartItems.length === 0) {
     return (
       <main className="flex min-h-[60vh] flex-col items-center justify-center gap-5 px-6">
+
         <h1 className="text-3xl font-bold text-[#10265A]">
           Your Cart Is Empty
         </h1>
@@ -356,6 +377,7 @@ const Checkout = () => {
         >
           Continue Shopping
         </Link>
+
       </main>
     );
   }
@@ -368,6 +390,7 @@ const Checkout = () => {
             HEADER
         ====================================== */}
         <div className="mb-8">
+
           <Link
             to="/cart"
             className="mb-4 inline-block text-sm font-semibold text-[#10265A] hover:underline"
@@ -379,13 +402,6 @@ const Checkout = () => {
             Checkout
           </h1>
 
-          <p className="mt-2 text-sm text-gray-500">
-            {totalItems}{" "}
-            {totalItems === 1
-              ? "item"
-              : "items"}{" "}
-            in your order
-          </p>
         </div>
 
         {/* =====================================
@@ -406,6 +422,7 @@ const Checkout = () => {
             onSubmit={handleCheckout}
             className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
           >
+
             <h2 className="mb-6 text-xl font-bold text-[#10265A]">
               Shipping Information
             </h2>
@@ -459,7 +476,6 @@ const Checkout = () => {
               {/* City + Postal Code */}
               <div className="grid gap-5 sm:grid-cols-2">
 
-                {/* City */}
                 <div>
                   <label
                     htmlFor="city"
@@ -481,7 +497,6 @@ const Checkout = () => {
                   />
                 </div>
 
-                {/* Postal Code */}
                 <div>
                   <label
                     htmlFor="postalCode"
@@ -533,10 +548,7 @@ const Checkout = () => {
             ====================================== */}
             <button
               type="submit"
-              disabled={
-                checkingOut ||
-                cartItems.length === 0
-              }
+              disabled={checkingOut}
               className="mt-8 w-full rounded bg-[#10265A] px-8 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-[#0b1d45] disabled:cursor-not-allowed disabled:bg-gray-400"
             >
               {checkingOut
@@ -545,8 +557,9 @@ const Checkout = () => {
             </button>
 
             <p className="mt-3 text-center text-xs text-gray-500">
-              You will be redirected to Xendit to securely complete your payment.
+              You will be redirected to Xendit to complete your payment.
             </p>
+
           </form>
 
           {/* =====================================
@@ -561,79 +574,67 @@ const Checkout = () => {
             <div className="space-y-5">
 
               {cartItems.map((item) => {
-                const product =
-                  getProduct(item);
-
-                const quantity =
-                  getQuantity(item);
-
-                const price =
-                  getPrice(item);
-
+                const product = getProduct(item);
+                const quantity = getQuantity(item);
+                const price = getPrice(item);
                 const lineTotal =
-                  Number(
-                    item.subtotal ??
-                      price * quantity
-                  );
+                  price * quantity;
 
-                const imageUrl =
-                  getProductImage(
-                    product.image
-                  );
+                const imageUrl = product.image
+                  ? product.image.startsWith("http")
+                    ? product.image
+                    : `${BASE_URL}${product.image}`
+                  : null;
 
                 return (
                   <div
-                    key={item.id}
+                    key={
+                      item.id ||
+                      product.id
+                    }
                     className="flex gap-4 border-b border-gray-100 pb-5"
                   >
 
                     {/* Product Image */}
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50">
+
                       {imageUrl ? (
                         <img
                           src={imageUrl}
                           alt={
-                            product.product_name ||
-                            "Product"
+                            product.product_name
                           }
-                          className="h-full w-full object-contain p-1"
+                          className="h-full w-full object-contain"
                         />
                       ) : (
                         <span className="text-xs text-gray-400">
                           No Image
                         </span>
                       )}
+
                     </div>
 
                     {/* Product Info */}
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-sm font-semibold text-gray-800">
-                        {product.product_name ||
-                          "Product"}
-                      </h3>
 
-                      {product.brand && (
-                        <p className="mt-1 text-xs text-gray-400">
-                          {product.brand}
-                        </p>
-                      )}
+                      <h3 className="truncate text-sm font-semibold text-gray-800">
+                        {product.product_name}
+                      </h3>
 
                       <p className="mt-1 text-xs text-gray-500">
                         Quantity: {quantity}
                       </p>
 
                       <p className="mt-1 text-sm text-gray-600">
-                        ${price.toFixed(2)} each
+                        ${price.toFixed(2)}
                       </p>
+
                     </div>
 
                     {/* Line Total */}
                     <div className="text-right">
                       <p className="text-sm font-semibold text-gray-800">
-                        $
-                        {lineTotal.toFixed(
-                          2
-                        )}
+                        ${lineTotal.toFixed(2)}
                       </p>
                     </div>
 
@@ -648,7 +649,6 @@ const Checkout = () => {
             ====================================== */}
             <div className="mt-6 space-y-3 text-sm">
 
-              {/* Subtotal */}
               <div className="flex justify-between text-gray-600">
                 <span>
                   Subtotal
@@ -659,7 +659,6 @@ const Checkout = () => {
                 </span>
               </div>
 
-              {/* Shipping */}
               <div className="flex justify-between text-gray-600">
                 <span>
                   Shipping
@@ -668,15 +667,14 @@ const Checkout = () => {
                 <span>
                   {shippingFee === 0
                     ? "Free"
-                    : `$${shippingFee.toFixed(
-                        2
-                      )}`}
+                    : `$${shippingFee.toFixed(2)}`}
                 </span>
               </div>
 
-              {/* Total */}
               <div className="border-t border-gray-200 pt-4">
+
                 <div className="flex justify-between text-lg font-bold text-[#10265A]">
+
                   <span>
                     Total
                   </span>
@@ -684,7 +682,9 @@ const Checkout = () => {
                   <span>
                     ${total.toFixed(2)}
                   </span>
+
                 </div>
+
               </div>
 
             </div>

@@ -1,5 +1,6 @@
 import Hero_image from "../assets/Hero_image.png";
 import Partner from "./Partner";
+import ProductList from "../components/ProductList";
 
 function Hero() {
   return (
@@ -62,6 +63,7 @@ function Hero() {
           </div>
         </div>
       </section>
+      <ProductList />
       <Partner />
     </>
   );

@@ -12,7 +12,7 @@ const Header = () => {
         {/* Logo */}
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-black">
-            RIVANSH
+            J TRONIX
           </h1>
         </div>
 
