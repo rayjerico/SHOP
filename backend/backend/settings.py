@@ -25,14 +25,14 @@ SECRET_KEY = 'django-insecure-&&+@af7=&=rdv_(b!-jn(ct#)j8l2*!2_e#+7@9tnmr+c740p5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-#ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*"]
 
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-    "https://shop-rj-8f25.vercel.app/",
-    "https://shop-9zmv.onrender.com/",
-]
+#ALLOWED_HOSTS = [
+#    "127.0.0.1",
+#    "localhost",
+#    "https://shop-rj-8f25.vercel.app/",
+#    "https://shop-9zmv.onrender.com/",
+#]
 
 #render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 
