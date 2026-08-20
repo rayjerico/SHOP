@@ -78,8 +78,8 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://shop-rj-8f25.vercel.app/",
-    "https://shop-9zmv.onrender.com/",
+    "https://shop-rj-8f25.vercel.app",
+    "https://shop-9zmv.onrender.com",
 ]
 
 ROOT_URLCONF = 'backend.urls'
