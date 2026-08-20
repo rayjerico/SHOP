@@ -162,7 +162,7 @@ const Profile = () => {
     }, [authenticatedRequest]);
 
   // =========================================
-  // Fetch Order History
+  // Fetch Purchase History
   // =========================================
   const fetchOrders =
     useCallback(async () => {
@@ -177,7 +177,7 @@ const Profile = () => {
           });
 
         console.log(
-          "Order history response:",
+          "Purchase history response:",
           response.data
         );
 
@@ -188,14 +188,14 @@ const Profile = () => {
         }
       } catch (err) {
         console.error(
-          "Failed to fetch order history:",
+          "Failed to fetch purchase history:",
           err
         );
 
         setOrdersError(
           err.response?.data?.detail ||
             err.message ||
-            "Unable to load order history."
+            "Unable to load purchase history."
         );
       } finally {
         setOrdersLoading(false);
@@ -203,7 +203,7 @@ const Profile = () => {
     }, [authenticatedRequest]);
 
   // =========================================
-  // Load Profile + Orders
+  // Load Profile + Purchase History
   // =========================================
   useEffect(() => {
     fetchUserProfile();
@@ -233,13 +233,21 @@ const Profile = () => {
       return "";
     }
 
+    // Django may return:
+    // /images/products_images/router.jpg
+    //
+    // Extract:
+    // router.jpg
+
     const fileName =
       image.split("/").pop();
 
     const imagePath =
       `../assets/product_img/${fileName}`;
 
-    return productImages[imagePath] || "";
+    return (
+      productImages[imagePath] || ""
+    );
   };
 
   // =========================================
@@ -247,7 +255,7 @@ const Profile = () => {
   // =========================================
   const formatDate = (date) => {
     if (!date) {
-      return "Not paid yet";
+      return "N/A";
     }
 
     return new Date(date).toLocaleDateString(
@@ -261,7 +269,7 @@ const Profile = () => {
   };
 
   // =========================================
-  // Format PHP
+  // Format PHP Price
   // =========================================
   const formatPHP = (amount) => {
     return `₱${Number(
@@ -273,49 +281,36 @@ const Profile = () => {
   };
 
   // =========================================
-  // Payment Status
+  // Get Completed Purchase Items
   // =========================================
-  const getOrderStatus = (order) => {
-    if (order.isPaid) {
-      return "PAID";
-    }
+  const purchaseItems = orders
+    .filter((order) => {
+      return (
+        order.isPaid === true ||
+        order.xendit_status === "PAID" ||
+        order.xendit_status === "SETTLED"
+      );
+    })
+    .flatMap((order) => {
+      return (order.items || []).map(
+        (item) => ({
+          ...item,
 
-    if (
-      order.xendit_status === "PAID" ||
-      order.xendit_status === "SETTLED"
-    ) {
-      return order.xendit_status;
-    }
+          paymentId: order.id,
 
-    return order.xendit_status || "PENDING";
-  };
+          purchaseDate:
+            order.paidAt,
 
-  // =========================================
-  // Status Style
-  // =========================================
-  const getStatusClass = (order) => {
-    const status = getOrderStatus(order);
-
-    if (
-      status === "PAID" ||
-      status === "SETTLED"
-    ) {
-      return "bg-green-100 text-green-700";
-    }
-
-    if (
-      status === "EXPIRED" ||
-      status === "FAILED"
-    ) {
-      return "bg-red-100 text-red-700";
-    }
-
-    return "bg-yellow-100 text-yellow-700";
-  };
+          paymentStatus:
+            order.xendit_status,
+        })
+      );
+    });
 
   return (
     <main className="min-h-screen bg-[#fdfdfd] px-4 py-7 font-sans text-black">
-      <div className="mx-auto w-full max-w-[720px]">
+
+      <div className="mx-auto w-full max-w-[620px]">
 
         {/* =====================================
             PROFILE
@@ -337,7 +332,9 @@ const Profile = () => {
           ) : (
             <div className="mt-[10px] space-y-[7px] text-[12px]">
 
+              {/* Username */}
               <div className="flex items-center">
+
                 <span className="w-[67px] font-semibold">
                   Username:
                 </span>
@@ -345,9 +342,12 @@ const Profile = () => {
                 <span>
                   {user?.username || "N/A"}
                 </span>
+
               </div>
 
+              {/* Email */}
               <div className="flex items-center">
+
                 <span className="w-[67px] font-semibold">
                   Email:
                 </span>
@@ -355,12 +355,15 @@ const Profile = () => {
                 <span>
                   {user?.email || "N/A"}
                 </span>
+
               </div>
 
             </div>
           )}
 
+          {/* Logout */}
           <div className="mt-[11px] flex justify-end">
+
             <button
               type="button"
               onClick={handleLogout}
@@ -368,14 +371,15 @@ const Profile = () => {
             >
               Logout
             </button>
+
           </div>
 
         </section>
 
         {/* =====================================
-            ORDER HISTORY
+            PURCHASE HISTORY
         ====================================== */}
-        <section className="mt-[21px] min-h-[322px] border border-gray-100 bg-white px-5 py-5 shadow-[0_2px_2px_rgba(0,0,0,0.2)]">
+        <section className="mt-[21px] min-h-[322px] border border-gray-100 bg-white px-5 py-[11px] shadow-[0_2px_2px_rgba(0,0,0,0.2)]">
 
           <h2 className="text-[24px] font-bold leading-tight">
             Purchase History
@@ -383,232 +387,146 @@ const Profile = () => {
 
           {ordersLoading ? (
             <div className="py-14 text-center">
+
               <p className="text-[11px] text-gray-500">
                 Loading purchase history...
               </p>
+
             </div>
           ) : ordersError ? (
             <div className="py-14 text-center">
+
               <p className="text-[11px] text-red-600">
                 {ordersError}
               </p>
+
             </div>
-          ) : orders.length === 0 ? (
+          ) : purchaseItems.length === 0 ? (
             <div className="py-14 text-center">
 
               <p className="text-sm font-semibold text-gray-700">
-                No orders yet
+                No purchases yet
               </p>
 
               <p className="mt-2 text-xs text-gray-500">
-                Your orders will appear here.
+                Your completed purchases will
+                appear here.
               </p>
 
             </div>
           ) : (
-            <div className="mt-5 space-y-5">
+            <div className="mt-[12px] w-full overflow-x-auto">
 
-              {orders.map((order) => {
-                const status =
-                  getOrderStatus(order);
+              {/* Table Header */}
+              <div className="grid min-w-[550px] grid-cols-[1.1fr_1.5fr_1.3fr_0.7fr_0.9fr] items-center gap-2 border-b border-gray-200 pb-2 text-[9px] font-semibold">
 
-                const items =
-                  order.items || [];
+                <div>
+                  Product Image
+                </div>
 
-                return (
-                  <article
-                    key={order.id}
-                    className="rounded-lg border border-gray-200 bg-white p-4"
-                  >
+                <div>
+                  Product Name
+                </div>
 
-                    {/* =================================
-                        ORDER HEADER
-                    ================================== */}
-                    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-200 pb-4">
+                <div>
+                  Purchase Date
+                </div>
 
-                      <div>
-                        <p className="text-sm font-bold text-[#10265A]">
-                          Order #{order.id}
-                        </p>
+                <div className="text-center">
+                  Quantity
+                </div>
 
-                        <p className="mt-1 text-[11px] text-gray-500">
-                          Payment ID:{" "}
-                          {order.xendit_invoice_id ||
-                            "N/A"}
-                        </p>
-                      </div>
+                <div className="text-right">
+                  Amount
+                </div>
 
-                      <span
-                        className={`rounded-full px-3 py-1 text-[10px] font-semibold ${getStatusClass(
-                          order
-                        )}`}
+              </div>
+
+              {/* Purchase Rows */}
+              <div className="min-w-[550px]">
+
+                {purchaseItems.map(
+                  (item) => {
+                    const product =
+                      item.product || {};
+
+                    const imageUrl =
+                      getProductImage(
+                        product.image
+                      );
+
+                    const amount =
+                      Number(
+                        item.price || 0
+                      );
+
+                    return (
+                      <div
+                        key={`${item.paymentId}-${item.id}`}
+                        className="grid grid-cols-[1.1fr_1.5fr_1.3fr_0.7fr_0.9fr] items-center gap-2 border-b border-gray-100 py-4 text-[9px]"
                       >
-                        {status}
-                      </span>
 
-                    </div>
+                        {/* Product Image */}
+                        <div>
 
-                    {/* =================================
-                        ORDER INFORMATION
-                    ================================== */}
-                    <div className="grid grid-cols-2 gap-4 py-4 text-[11px] sm:grid-cols-3">
+                          {imageUrl ? (
+                            <div className="flex h-[42px] w-[60px] items-center justify-center">
 
-                      <div>
-                        <p className="text-gray-500">
-                          Total
-                        </p>
+                              <img
+                                src={imageUrl}
+                                alt={
+                                  product.product_name ||
+                                  "Product"
+                                }
+                                className="max-h-full max-w-full object-contain"
+                              />
 
-                        <p className="mt-1 font-semibold">
-                          {formatPHP(
-                            order.totalPrice
+                            </div>
+                          ) : (
+                            <div className="flex h-[42px] w-[60px] items-center justify-center bg-gray-100 text-[8px] text-gray-400">
+                              No image
+                            </div>
                           )}
-                        </p>
-                      </div>
 
-                      <div>
-                        <p className="text-gray-500">
-                          Payment Status
-                        </p>
+                        </div>
 
-                        <p className="mt-1 font-semibold">
-                          {status}
-                        </p>
-                      </div>
+                        {/* Product Name */}
+                        <div className="pr-2 font-medium">
 
-                      <div>
-                        <p className="text-gray-500">
-                          Paid Date
-                        </p>
+                          {product.product_name ||
+                            "Product"}
 
-                        <p className="mt-1 font-semibold">
+                        </div>
+
+                        {/* Purchase Date */}
+                        <div>
+
                           {formatDate(
-                            order.paidAt
+                            item.purchaseDate
                           )}
-                        </p>
-                      </div>
 
-                    </div>
+                        </div>
 
-                    {/* =================================
-                        SHIPPING INFORMATION
-                    ================================== */}
-                    {order.shipping && (
-                      <div className="border-t border-gray-100 py-4">
+                        {/* Quantity */}
+                        <div className="text-center">
 
-                        <p className="mb-2 text-xs font-bold text-[#10265A]">
-                          Shipping Address
-                        </p>
+                          {item.qty}
 
-                        <p className="text-[11px] leading-5 text-gray-600">
-                          {order.shipping.fullName}
-                          <br />
+                        </div>
 
-                          {order.shipping.address}
-                          <br />
+                        {/* Amount */}
+                        <div className="text-right font-semibold">
 
-                          {order.shipping.city},{" "}
-                          {order.shipping.postalCode}
-                          <br />
-
-                          {order.shipping.country}
-                        </p>
-
-                      </div>
-                    )}
-
-                    {/* =================================
-                        ORDER ITEMS
-                    ================================== */}
-                    {items.length > 0 ? (
-                      <div className="border-t border-gray-100 pt-4">
-
-                        <p className="mb-3 text-xs font-bold text-[#10265A]">
-                          Products
-                        </p>
-
-                        <div className="space-y-3">
-
-                          {items.map((item) => {
-                            const product =
-                              item.product || {};
-
-                            const imageUrl =
-                              getProductImage(
-                                product.image
-                              );
-
-                            const amount =
-                              Number(
-                                item.price || 0
-                              );
-
-                            return (
-                              <div
-                                key={item.id}
-                                className="flex items-center gap-4 rounded border border-gray-100 p-3"
-                              >
-
-                                {/* Product Image */}
-                                <div className="flex h-14 w-16 shrink-0 items-center justify-center">
-
-                                  {imageUrl ? (
-                                    <img
-                                      src={imageUrl}
-                                      alt={
-                                        product.product_name ||
-                                        "Product"
-                                      }
-                                      className="max-h-full max-w-full object-contain"
-                                    />
-                                  ) : (
-                                    <div className="flex h-full w-full items-center justify-center bg-gray-100 text-[8px] text-gray-400">
-                                      No image
-                                    </div>
-                                  )}
-
-                                </div>
-
-                                {/* Product Info */}
-                                <div className="min-w-0 flex-1">
-
-                                  <p className="truncate text-[11px] font-semibold">
-                                    {product.product_name ||
-                                      "Product"}
-                                  </p>
-
-                                  <p className="mt-1 text-[10px] text-gray-500">
-                                    Qty: {item.qty}
-                                  </p>
-
-                                </div>
-
-                                {/* Amount */}
-                                <div className="text-right text-[11px] font-semibold">
-                                  {formatPHP(amount)}
-                                </div>
-
-                              </div>
-                            );
-                          })}
+                          {formatPHP(amount)}
 
                         </div>
 
                       </div>
-                    ) : (
-                      <div className="border-t border-gray-100 pt-4">
+                    );
+                  }
+                )}
 
-                        <p className="text-[11px] text-gray-500">
-                          {order.isPaid
-                            ? "No product details available for this order."
-                            : "Product details will be finalized after payment is confirmed."}
-                        </p>
-
-                      </div>
-                    )}
-
-                  </article>
-                );
-              })}
+              </div>
 
             </div>
           )}
@@ -616,6 +534,7 @@ const Profile = () => {
         </section>
 
       </div>
+
     </main>
   );
 };
