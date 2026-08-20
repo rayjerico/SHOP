@@ -25,7 +25,17 @@ SECRET_KEY = 'django-insecure-&&+@af7=&=rdv_(b!-jn(ct#)j8l2*!2_e#+7@9tnmr+c740p5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+#ALLOWED_HOSTS = ["*"]
+
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+]
+
+render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+
+if render_hostname:
+    ALLOWED_HOSTS.append(render_hostname)
 
 
 # Application definition
@@ -60,9 +70,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://shop-rj-8f25.vercel.app/",
+]
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -139,8 +154,42 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/images/'
 MEDIA_ROOT = 'static/images'
 
-XENDIT_SECRET_API_KEY = 'xnd_development_iT5eafdWebIx8YWuY9s4qQCmVCfLwQp30gMDZQnKpgPw892qBqPBEayjTPPI0'
-XENDIT_CALLBACK_TOKEN = 'bSXtYB9moJV6N7JWwmUGkDgWYGiF9CkrSCpfg1d4dx7eaav6'
-XENDIT_SUCCESS_URL = 'http://localhost:5173/payment-success'
+#XENDIT_SECRET_API_KEY = 'xnd_development_iT5eafdWebIx8YWuY9s4qQCmVCfLwQp30gMDZQnKpgPw892qBqPBEayjTPPI0'
+#XENDIT_CALLBACK_TOKEN = 'bSXtYB9moJV6N7JWwmUGkDgWYGiF9CkrSCpfg1d4dx7eaav6'
+#XENDIT_SUCCESS_URL = 'http://localhost:5173/payment-success'
+#XENDIT_FAILURE_URL = 'http://localhost:5173/payment-failure'
 
-XENDIT_FAILURE_URL = 'http://localhost:5173/payment-failure'
+
+import os
+import dj_database_url
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
+
+DEBUG = os.environ.get("DEBUG", "False") == "True"
+
+
+STATIC_ROOT = os.path.join(
+    BASE_DIR,
+    "staticfiles"
+)
+
+
+XENDIT_SECRET_API_KEY = os.environ.get(
+    "XENDIT_SECRET_API_KEY",
+    "xnd_development_iT5eafdWebIx8YWuY9s4qQCmVCfLwQp30gMDZQnKpgPw892qBqPBEayjTPPI0"
+)
+
+XENDIT_CALLBACK_TOKEN = os.environ.get(
+    "XENDIT_CALLBACK_TOKEN",
+    "bSXtYB9moJV6N7JWwmUGkDgWYGiF9CkrSCpfg1d4dx7eaav6"
+)
+
+XENDIT_SUCCESS_URL = os.environ.get(
+    "XENDIT_SUCCESS_URL",
+    "https://shop-rj-8f25.vercel.app/payment-success"
+)
+
+XENDIT_FAILURE_URL = os.environ.get(
+    "XENDIT_FAILURE_URL",
+    "https://shop-rj-8f25.vercel.app/payment-failure"
+)
