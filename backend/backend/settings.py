@@ -30,6 +30,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
+    "https://shop-rj-8f25.vercel.app/",
 ]
 
 #render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
