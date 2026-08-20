@@ -3,6 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BASE_URL } from "../api/base";
 
+// =========================================
+// Load Product Images From Local Assets
+// =========================================
+const productImages = import.meta.glob(
+  "../assets/product_img/*",
+  {
+    eager: true,
+    import: "default",
+  }
+);
+
 const Checkout = () => {
   const navigate = useNavigate();
 
@@ -54,21 +65,21 @@ const Checkout = () => {
           response.data
         );
 
-        // Your Django cart_view returns:
-        // {
-        //   items: [],
-        //   total_items: 0,
-        //   total_price: 0
-        // }
-
-        const items = response.data?.items ?? [];
+        const items =
+          response.data?.items ?? [];
 
         setCartItems(items);
+
         setTotalItems(
-          Number(response.data?.total_items ?? 0)
+          Number(
+            response.data?.total_items ?? 0
+          )
         );
+
         setTotalPrice(
-          Number(response.data?.total_price ?? 0)
+          Number(
+            response.data?.total_price ?? 0
+          )
         );
 
         if (items.length === 0) {
@@ -86,8 +97,13 @@ const Checkout = () => {
         );
 
         if (err.response?.status === 401) {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
+          localStorage.removeItem(
+            "access_token"
+          );
+
+          localStorage.removeItem(
+            "refresh_token"
+          );
 
           navigate("/login");
           return;
@@ -143,6 +159,18 @@ const Checkout = () => {
   };
 
   // =========================================
+  // Format PHP Price
+  // =========================================
+  const formatPHP = (amount) => {
+    return `₱${Number(
+      amount || 0
+    ).toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  // =========================================
   // Product Image Helper
   // =========================================
   const getProductImage = (image) => {
@@ -150,14 +178,21 @@ const Checkout = () => {
       return "";
     }
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
-      return image;
-    }
+    // Django may return:
+    // /images/products_images/router.jpg
+    //
+    // Extract:
+    // router.jpg
 
-    return `${BASE_URL}${image}`;
+    const fileName =
+      image.split("/").pop();
+
+    const imagePath =
+      `../assets/product_img/${fileName}`;
+
+    return (
+      productImages[imagePath] || ""
+    );
   };
 
   // =========================================
@@ -166,8 +201,9 @@ const Checkout = () => {
   const shippingFee = 0;
 
   // Django calculates the actual payment total.
-  // This value is only for frontend display.
-  const subtotal = Number(totalPrice);
+  // These values are only for frontend display.
+  const subtotal =
+    Number(totalPrice);
 
   const total =
     subtotal + shippingFee;
@@ -202,6 +238,7 @@ const Checkout = () => {
       setError(
         "Please complete all shipping information."
       );
+
       return;
     }
 
@@ -213,16 +250,28 @@ const Checkout = () => {
       const response = await axios.post(
         `${BASE_URL}/api/checkout/xendit`,
         {
-          fullName: form.fullName.trim(),
-          address: form.address.trim(),
-          city: form.city.trim(),
-          postalCode: form.postalCode.trim(),
-          country: form.country.trim(),
+          fullName:
+            form.fullName.trim(),
+
+          address:
+            form.address.trim(),
+
+          city:
+            form.city.trim(),
+
+          postalCode:
+            form.postalCode.trim(),
+
+          country:
+            form.country.trim(),
         },
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
+            Authorization:
+              `Bearer ${accessToken}`,
+
+            "Content-Type":
+              "application/json",
           },
         }
       );
@@ -232,9 +281,10 @@ const Checkout = () => {
         response.data
       );
 
-      // Your Django backend returns:
+      // Django backend returns:
       // {
-      //   checkout_url: "https://checkout.xendit.co/..."
+      //   checkout_url:
+      //   "https://checkout.xendit.co/..."
       // }
 
       const checkoutUrl =
@@ -254,9 +304,10 @@ const Checkout = () => {
       }
 
       // =========================================
-      // Redirect directly to Xendit
+      // Redirect Directly To Xendit
       // =========================================
-      window.location.href = checkoutUrl;
+      window.location.href =
+        checkoutUrl;
     } catch (err) {
       console.error(
         "Xendit checkout failed:",
@@ -270,25 +321,34 @@ const Checkout = () => {
 
       // Session expired
       if (err.response?.status === 401) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
+        localStorage.removeItem(
+          "access_token"
+        );
+
+        localStorage.removeItem(
+          "refresh_token"
+        );
 
         navigate("/login");
         return;
       }
 
       // Django detail error
-      if (err.response?.data?.detail) {
+      if (
+        err.response?.data?.detail
+      ) {
         setError(
           err.response.data.detail
         );
+
         return;
       }
 
       // Serializer validation errors
       if (
         err.response?.data &&
-        typeof err.response.data === "object"
+        typeof err.response.data ===
+          "object"
       ) {
         const validationErrors =
           Object.values(
@@ -298,7 +358,8 @@ const Checkout = () => {
         const firstError =
           validationErrors.find(
             (message) =>
-              typeof message === "string"
+              typeof message ===
+              "string"
           );
 
         if (firstError) {
@@ -312,6 +373,7 @@ const Checkout = () => {
         setError(
           "Unable to connect to the Django server."
         );
+
         return;
       }
 
@@ -342,6 +404,7 @@ const Checkout = () => {
   if (cartItems.length === 0) {
     return (
       <main className="flex min-h-[60vh] flex-col items-center justify-center gap-5 px-6">
+
         <h1 className="text-3xl font-bold text-[#10265A]">
           Your Cart Is Empty
         </h1>
@@ -356,18 +419,21 @@ const Checkout = () => {
         >
           Continue Shopping
         </Link>
+
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-12">
+
       <div className="mx-auto max-w-6xl">
 
         {/* =====================================
             HEADER
         ====================================== */}
         <div className="mb-8">
+
           <Link
             to="/cart"
             className="mb-4 inline-block text-sm font-semibold text-[#10265A] hover:underline"
@@ -386,6 +452,7 @@ const Checkout = () => {
               : "items"}{" "}
             in your order
           </p>
+
         </div>
 
         {/* =====================================
@@ -406,6 +473,7 @@ const Checkout = () => {
             onSubmit={handleCheckout}
             className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
           >
+
             <h2 className="mb-6 text-xl font-bold text-[#10265A]">
               Shipping Information
             </h2>
@@ -414,6 +482,7 @@ const Checkout = () => {
 
               {/* Full Name */}
               <div>
+
                 <label
                   htmlFor="fullName"
                   className="mb-2 block text-sm font-semibold text-gray-700"
@@ -432,10 +501,12 @@ const Checkout = () => {
                   required
                   className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#10265A] focus:ring-1 focus:ring-[#10265A]"
                 />
+
               </div>
 
               {/* Address */}
               <div>
+
                 <label
                   htmlFor="address"
                   className="mb-2 block text-sm font-semibold text-gray-700"
@@ -454,6 +525,7 @@ const Checkout = () => {
                   required
                   className="w-full resize-none rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#10265A] focus:ring-1 focus:ring-[#10265A]"
                 />
+
               </div>
 
               {/* City + Postal Code */}
@@ -461,6 +533,7 @@ const Checkout = () => {
 
                 {/* City */}
                 <div>
+
                   <label
                     htmlFor="city"
                     className="mb-2 block text-sm font-semibold text-gray-700"
@@ -479,10 +552,12 @@ const Checkout = () => {
                     required
                     className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#10265A] focus:ring-1 focus:ring-[#10265A]"
                   />
+
                 </div>
 
                 {/* Postal Code */}
                 <div>
+
                   <label
                     htmlFor="postalCode"
                     className="mb-2 block text-sm font-semibold text-gray-700"
@@ -501,12 +576,14 @@ const Checkout = () => {
                     required
                     className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#10265A] focus:ring-1 focus:ring-[#10265A]"
                   />
+
                 </div>
 
               </div>
 
               {/* Country */}
               <div>
+
                 <label
                   htmlFor="country"
                   className="mb-2 block text-sm font-semibold text-gray-700"
@@ -524,6 +601,7 @@ const Checkout = () => {
                   required
                   className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#10265A] focus:ring-1 focus:ring-[#10265A]"
                 />
+
               </div>
 
             </div>
@@ -547,6 +625,7 @@ const Checkout = () => {
             <p className="mt-3 text-center text-xs text-gray-500">
               You will be redirected to Xendit to securely complete your payment.
             </p>
+
           </form>
 
           {/* =====================================
@@ -589,6 +668,7 @@ const Checkout = () => {
 
                     {/* Product Image */}
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50">
+
                       {imageUrl ? (
                         <img
                           src={imageUrl}
@@ -603,10 +683,12 @@ const Checkout = () => {
                           No Image
                         </span>
                       )}
+
                     </div>
 
                     {/* Product Info */}
                     <div className="min-w-0 flex-1">
+
                       <h3 className="truncate text-sm font-semibold text-gray-800">
                         {product.product_name ||
                           "Product"}
@@ -623,18 +705,18 @@ const Checkout = () => {
                       </p>
 
                       <p className="mt-1 text-sm text-gray-600">
-                        ${price.toFixed(2)} each
+                        {formatPHP(price)} each
                       </p>
+
                     </div>
 
                     {/* Line Total */}
                     <div className="text-right">
+
                       <p className="text-sm font-semibold text-gray-800">
-                        $
-                        {lineTotal.toFixed(
-                          2
-                        )}
+                        {formatPHP(lineTotal)}
                       </p>
+
                     </div>
 
                   </div>
@@ -650,17 +732,20 @@ const Checkout = () => {
 
               {/* Subtotal */}
               <div className="flex justify-between text-gray-600">
+
                 <span>
                   Subtotal
                 </span>
 
                 <span>
-                  ${subtotal.toFixed(2)}
+                  {formatPHP(subtotal)}
                 </span>
+
               </div>
 
               {/* Shipping */}
               <div className="flex justify-between text-gray-600">
+
                 <span>
                   Shipping
                 </span>
@@ -668,23 +753,28 @@ const Checkout = () => {
                 <span>
                   {shippingFee === 0
                     ? "Free"
-                    : `$${shippingFee.toFixed(
-                        2
-                      )}`}
+                    : formatPHP(
+                        shippingFee
+                      )}
                 </span>
+
               </div>
 
               {/* Total */}
               <div className="border-t border-gray-200 pt-4">
+
                 <div className="flex justify-between text-lg font-bold text-[#10265A]">
+
                   <span>
                     Total
                   </span>
 
                   <span>
-                    ${total.toFixed(2)}
+                    {formatPHP(total)}
                   </span>
+
                 </div>
+
               </div>
 
             </div>
@@ -692,7 +782,9 @@ const Checkout = () => {
           </section>
 
         </div>
+
       </div>
+
     </main>
   );
 };

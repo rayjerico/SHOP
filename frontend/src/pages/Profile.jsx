@@ -9,6 +9,17 @@ import axios from "axios";
 import { AuthContext } from "../context/AuthProvider";
 import { BASE_URL } from "../api/base";
 
+// =========================================
+// Load Product Images From Local Assets
+// =========================================
+const productImages = import.meta.glob(
+  "../assets/product_img/*",
+  {
+    eager: true,
+    import: "default",
+  }
+);
+
 const Profile = () => {
   const { setIsAuthenticated } =
     useContext(AuthContext);
@@ -105,7 +116,6 @@ const Profile = () => {
       try {
         return await makeRequest(accessToken);
       } catch (err) {
-        // Try refreshing only when access token expired
         if (err.response?.status !== 401) {
           throw err;
         }
@@ -223,14 +233,21 @@ const Profile = () => {
       return "";
     }
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
-      return image;
-    }
+    // Django may return:
+    // /images/products_images/router.jpg
+    //
+    // Extract:
+    // router.jpg
 
-    return `${BASE_URL}${image}`;
+    const fileName =
+      image.split("/").pop();
+
+    const imagePath =
+      `../assets/product_img/${fileName}`;
+
+    return (
+      productImages[imagePath] || ""
+    );
   };
 
   // =========================================
@@ -290,9 +307,6 @@ const Profile = () => {
       );
     });
 
-  // =========================================
-  // Render
-  // =========================================
   return (
     <main className="min-h-screen bg-[#fdfdfd] px-4 py-7 font-sans text-black">
 
@@ -307,18 +321,15 @@ const Profile = () => {
             My Profile
           </h1>
 
-          {/* Loading */}
           {loading ? (
             <p className="mt-5 text-[12px] text-gray-500">
               Loading profile...
             </p>
           ) : error ? (
-            /* Error */
             <p className="mt-5 text-[12px] text-red-600">
               {error}
             </p>
           ) : (
-            /* User Information */
             <div className="mt-[10px] space-y-[7px] text-[12px]">
 
               {/* Username */}
@@ -374,9 +385,6 @@ const Profile = () => {
             Purchase History
           </h2>
 
-          {/* =================================
-              LOADING PURCHASES
-          ================================== */}
           {ordersLoading ? (
             <div className="py-14 text-center">
 
@@ -386,10 +394,6 @@ const Profile = () => {
 
             </div>
           ) : ordersError ? (
-
-            /* =================================
-                PURCHASE ERROR
-            ================================== */
             <div className="py-14 text-center">
 
               <p className="text-[11px] text-red-600">
@@ -398,10 +402,6 @@ const Profile = () => {
 
             </div>
           ) : purchaseItems.length === 0 ? (
-
-            /* =================================
-                NO PURCHASES
-            ================================== */
             <div className="py-14 text-center">
 
               <p className="text-sm font-semibold text-gray-700">
@@ -415,10 +415,6 @@ const Profile = () => {
 
             </div>
           ) : (
-
-            /* =================================
-                PURCHASE TABLE
-            ================================== */
             <div className="mt-[12px] w-full overflow-x-auto">
 
               {/* Table Header */}
@@ -446,9 +442,7 @@ const Profile = () => {
 
               </div>
 
-              {/* =================================
-                  PURCHASE ROWS
-              ================================== */}
+              {/* Purchase Rows */}
               <div className="min-w-[550px]">
 
                 {purchaseItems.map(
@@ -461,11 +455,6 @@ const Profile = () => {
                         product.image
                       );
 
-                    /*
-                     * orderItem.price from your
-                     * current Django model is used
-                     * as the purchase amount.
-                     */
                     const amount =
                       Number(
                         item.price || 0

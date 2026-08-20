@@ -3,6 +3,15 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { BASE_URL } from "../api/base";
 
+// Load all product images from src/assets/product_img
+const productImages = import.meta.glob(
+  "../assets/product_img/*",
+  {
+    eager: true,
+    import: "default",
+  }
+);
+
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [showAll, setShowAll] = useState(false);
@@ -31,66 +40,120 @@ const ProductList = () => {
     };
   }, []);
 
-  // Show only the first 6 products unless "View all products" is clicked
-  const displayedProducts = showAll ? products : products.slice(0, 6);
+  // =========================================
+  // Get Local Product Image
+  // =========================================
+  const getProductImage = (image) => {
+    if (!image) {
+      return "";
+    }
+
+    // Django might return:
+    // /images/products_images/shoes.jpg
+    //
+    // We only need:
+    // shoes.jpg
+
+    const fileName = image.split("/").pop();
+
+    const imagePath =
+      `../assets/product_img/${fileName}`;
+
+    return productImages[imagePath] || "";
+  };
+
+  // Show only first 6 products
+  const displayedProducts = showAll
+    ? products
+    : products.slice(0, 6);
 
   return (
     <section className="px-6 py-16">
+
       {/* Heading */}
       <h2 className="mb-12 text-center text-2xl font-extrabold tracking-wide text-[#10265A] md:text-3xl">
         PRODUCT LIST
       </h2>
 
-      {/* Product grid */}
+      {/* Product Grid */}
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {displayedProducts.map((item) => (
-          <Link
-            key={item.id}
-            to={`/products/${item.id}`}
-            className="block"
-          >
-            <article className="flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:shadow-lg">
-              {/* Product image */}
-              <img
-                src={`http://127.0.0.1:8000${item.image}`}
-                alt={item.product_name}
-                className="h-70 w-full object-contain p-6"
-              />
 
-              {/* Details */}
-              <div className="flex flex-1 flex-col justify-between px-6 pb-6">
-                {/* Name + price */}
-                <div className="mb-1 flex items-start justify-between">
-                  <p className="text-sm font-semibold text-gray-800">
-                    {item.product_name}
-                  </p>
+        {displayedProducts.map((item) => {
+          const imageUrl =
+            getProductImage(item.image);
 
-                  <p className="text-sm font-semibold text-gray-700">
-                    ${item.product_price}
-                  </p>
+          return (
+            <Link
+              key={item.id}
+              to={`/products/${item.id}`}
+              className="block"
+            >
+              <article className="flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:shadow-lg">
+
+                {/* Product Image */}
+                <div className="flex h-70 items-center justify-center p-6">
+
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={item.product_name}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      No image
+                    </p>
+                  )}
+
                 </div>
 
-                {/* Brand */}
-                <p className="mb-4 text-xs font-medium uppercase tracking-wide text-gray-500">
-                  {item.brand}
-                </p>
+                {/* Details */}
+                <div className="flex flex-1 flex-col justify-between px-6 pb-6">
 
-                {/* Buy button */}
-                <button
-                  type="button"
-                  className="self-end rounded bg-[#10265A] px-4 py-1.5 text-xs font-semibold tracking-wide text-white transition hover:bg-[#0b1d45]"
-                >
-                  BUY
-                </button>
-              </div>
-            </article>
-          </Link>
-        ))}
+                  {/* Name + Price */}
+                  <div className="mb-1 flex items-start justify-between">
+
+                    <p className="text-sm font-semibold text-gray-800">
+                      {item.product_name}
+                    </p>
+
+                    <p className="text-sm font-semibold text-gray-700">
+                      ₱{Number(
+                        item.product_price
+                      ).toLocaleString("en-PH", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+
+                  </div>
+
+                  {/* Brand */}
+                  <p className="mb-4 text-xs font-medium uppercase tracking-wide text-gray-500">
+                    {item.brand}
+                  </p>
+
+                  {/* Buy Button */}
+                  <button
+                    type="button"
+                    className="self-end rounded bg-[#10265A] px-4 py-1.5 text-xs font-semibold tracking-wide text-white transition hover:bg-[#0b1d45]"
+                  >
+                    BUY
+                  </button>
+
+                </div>
+
+              </article>
+            </Link>
+          );
+        })}
+
       </div>
 
-      {/* View-all CTA */}
+      {/* View All Products */}
       {!showAll && products.length > 6 && (
         <div className="mt-14 flex justify-center">
+
           <button
             type="button"
             onClick={() => setShowAll(true)}
@@ -98,8 +161,10 @@ const ProductList = () => {
           >
             View all products
           </button>
+
         </div>
       )}
+
     </section>
   );
 };
