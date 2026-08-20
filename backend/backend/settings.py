@@ -32,7 +32,7 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 
-render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+#render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 
 if render_hostname:
     ALLOWED_HOSTS.append(render_hostname)
@@ -154,42 +154,42 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/images/'
 MEDIA_ROOT = 'static/images'
 
-#XENDIT_SECRET_API_KEY = 'xnd_development_iT5eafdWebIx8YWuY9s4qQCmVCfLwQp30gMDZQnKpgPw892qBqPBEayjTPPI0'
-#XENDIT_CALLBACK_TOKEN = 'bSXtYB9moJV6N7JWwmUGkDgWYGiF9CkrSCpfg1d4dx7eaav6'
-#XENDIT_SUCCESS_URL = 'http://localhost:5173/payment-success'
-#XENDIT_FAILURE_URL = 'http://localhost:5173/payment-failure'
+XENDIT_SECRET_API_KEY = 'xnd_development_iT5eafdWebIx8YWuY9s4qQCmVCfLwQp30gMDZQnKpgPw892qBqPBEayjTPPI0'
+XENDIT_CALLBACK_TOKEN = 'bSXtYB9moJV6N7JWwmUGkDgWYGiF9CkrSCpfg1d4dx7eaav6'
+XENDIT_SUCCESS_URL = 'https://shop-rj-8f25.vercel.app/payment-success'
+XENDIT_FAILURE_URL = 'https://shop-rj-8f25.vercel.app/payment-failure'
 
 
-import os
-import dj_database_url
+#import os
+#import dj_database_url
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
+#SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
 
-DEBUG = os.environ.get("DEBUG", "False") == "True"
-
-
-STATIC_ROOT = os.path.join(
-    BASE_DIR,
-    "staticfiles"
-)
+#DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 
-XENDIT_SECRET_API_KEY = os.environ.get(
-    "XENDIT_SECRET_API_KEY",
-    "xnd_development_iT5eafdWebIx8YWuY9s4qQCmVCfLwQp30gMDZQnKpgPw892qBqPBEayjTPPI0"
-)
+#STATIC_ROOT = os.path.join(
+#    BASE_DIR,
+#    "staticfiles"
+#)
 
-XENDIT_CALLBACK_TOKEN = os.environ.get(
-    "XENDIT_CALLBACK_TOKEN",
-    "bSXtYB9moJV6N7JWwmUGkDgWYGiF9CkrSCpfg1d4dx7eaav6"
-)
 
-XENDIT_SUCCESS_URL = os.environ.get(
-    "XENDIT_SUCCESS_URL",
-    "https://shop-rj-8f25.vercel.app/payment-success"
-)
+#XENDIT_SECRET_API_KEY = os.environ.get(
+#    "XENDIT_SECRET_API_KEY",
+#    "xnd_development_iT5eafdWebIx8YWuY9s4qQCmVCfLwQp30gMDZQnKpgPw892qBqPBEayjTPPI0"
+#)
 
-XENDIT_FAILURE_URL = os.environ.get(
-    "XENDIT_FAILURE_URL",
-    "https://shop-rj-8f25.vercel.app/payment-failure"
-)
+#XENDIT_CALLBACK_TOKEN = os.environ.get(
+#    "XENDIT_CALLBACK_TOKEN",
+#    "bSXtYB9moJV6N7JWwmUGkDgWYGiF9CkrSCpfg1d4dx7eaav6"
+#)
+
+#XENDIT_SUCCESS_URL = os.environ.get(
+#    "XENDIT_SUCCESS_URL",
+#    "https://shop-rj-8f25.vercel.app/payment-success"
+#)
+
+#XENDIT_FAILURE_URL = os.environ.get(
+#    "XENDIT_FAILURE_URL",
+#    "https://shop-rj-8f25.vercel.app/payment-failure"
+#)
